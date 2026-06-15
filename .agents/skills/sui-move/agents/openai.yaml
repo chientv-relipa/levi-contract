@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sui Move"
+  short_description: "Sui Move smart-contract patterns"
+  default_prompt: "Use the sui-move skill to help build, test, or ship Sui Move modules in this project — object model, capabilities, PTBs/sponsored transactions, test_scenario tests, and publishing — including porting Solana/Anchor logic to Sui."
