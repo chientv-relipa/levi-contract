@@ -1,5 +1,5 @@
 /// Handler: add a new whitelist entry or toggle an existing target's `allowed` flag
-/// (owner only). Mirrors Solana `update_agent_program_target.rs`. Maintenance-gated.
+/// (owner only). Maintenance-gated.
 module levi::update_agent_program_target;
 
 use levi::config::{Self, Config};

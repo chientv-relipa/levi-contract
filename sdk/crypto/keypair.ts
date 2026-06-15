@@ -1,10 +1,8 @@
 import { x25519 } from "@noble/curves/ed25519";
 
 // x25519 keypair used to encrypt action payloads to the relayer.
-// The encryption *envelope* (x25519 + ChaCha20-Poly1305, see encrypt.ts) is byte-identical
-// to the Solana Bento SDK, so the transport layer is cross-chain compatible. NOTE: the
-// inner ActionPayload uses BCS here vs borsh on Solana (see action-payload.ts), so the
-// relayer must decode payloads with the codec matching the source chain.
+// The encryption envelope is x25519 + ChaCha20-Poly1305 (see encrypt.ts); the inner
+// ActionPayload is BCS-encoded (see action-payload.ts).
 
 export interface X25519Keypair {
   secretKey: Uint8Array;

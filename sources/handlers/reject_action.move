@@ -1,8 +1,8 @@
 /// Handler: owner rejects an escalated action (`Escalated → Rejected`).
-/// Mirrors Solana `reject_action.rs`: a rejection earns a strike and can auto-deactivate
-/// the agent — an owner rejecting an escalated action is itself a negative signal. This
-/// is why `reject_action` takes `&Config` + `&mut Agent` while `approve_action` does not.
-/// Intentionally ungated for maintenance (matches Solana).
+/// A rejection earns a strike and can auto-deactivate the agent — an owner rejecting an
+/// escalated action is itself a negative signal. This is why `reject_action` takes
+/// `&Config` + `&mut Agent` while `approve_action` does not. Intentionally ungated for
+/// maintenance.
 module levi::reject_action;
 
 use levi::config::{Self, Config};

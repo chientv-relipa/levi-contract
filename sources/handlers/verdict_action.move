@@ -1,7 +1,6 @@
 /// Handler: the relayer lands a verdict (holder of `RelayerCap`).
-/// Mirrors Solana `admin/verdict_action.rs`. Writes `raw_score` + `reasoning_hash`,
-/// maps the score to a decision via Config thresholds, then updates the agent's EMA
-/// reputation and strikes.
+/// Writes `raw_score` + `reasoning_hash`, maps the score to a decision via Config
+/// thresholds, then updates the agent's EMA reputation and strikes.
 module levi::verdict_action;
 
 use levi::capability::RelayerCap;
@@ -79,9 +78,8 @@ public fun verdict_action(
         events::emit_strike_added(agent_id, agent::strikes(agent), raw_score);
     };
 
-    // Auto-deactivation is checked on EVERY verdict (matches Solana `verdict_action`,
-    // where `auto_deactivate_if_max_strikes` runs unconditionally). This also lets a
-    // `max_strikes` later lowered below the agent's current strikes take effect on the
+    // Auto-deactivation is checked on EVERY verdict (runs unconditionally). This also lets
+    // a `max_strikes` later lowered below the agent's current strikes take effect on the
     // next verdict, even one that is not itself a block.
     if (agent::auto_deactivate_if_max_strikes(agent, config::max_strikes(config))) {
         events::emit_agent_auto_deactivated(

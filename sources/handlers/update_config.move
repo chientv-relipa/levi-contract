@@ -1,6 +1,6 @@
 /// Handler: update any subset of Config fields, gated on the `AdminCap`.
-/// Mirrors Solana `admin/update_confg.rs`. The mutation + validation logic lives in
-/// `levi::config`; this is a thin authority wrapper.
+/// The mutation + validation logic lives in `levi::config`; this is a thin authority
+/// wrapper.
 module levi::update_config;
 
 use levi::capability::AdminCap;

@@ -1,4 +1,4 @@
-/// Handler: reactivate a deactivated agent (owner only). Mirrors Solana `active_agent.rs`.
+/// Handler: reactivate a deactivated agent (owner only).
 /// Aborts if the agent is already active. Maintenance-gated.
 module levi::activate_agent;
 

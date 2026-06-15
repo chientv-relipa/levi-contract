@@ -1,6 +1,5 @@
 /// Handler: submit an encrypted action for analysis (sender = agent wallet).
-/// Mirrors Solana `init_action.rs` + `append_payload.rs` + `finalize_action_building.rs`
-/// collapsed into one call (Sui has no 1232-byte tx limit, so no chunking is needed).
+/// The whole encrypted payload fits one transaction, so it is submitted in a single call.
 /// Creates the `Action` in `PENDING` and emits `ActionSubmitted`.
 module levi::submit_action;
 

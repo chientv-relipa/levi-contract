@@ -3,7 +3,7 @@ import { chacha20poly1305 } from "@noble/ciphers/chacha";
 import { randomBytes } from "@noble/ciphers/webcrypto";
 import { X25519_KEY_LENGTH } from "./keypair";
 
-// ECDH (x25519) + ChaCha20-Poly1305. Wire format (identical to Bento):
+// ECDH (x25519) + ChaCha20-Poly1305. Wire format:
 //   payload = ephemeralPublicKey(32) || nonce(12) || ciphertext
 export const NONCE_LENGTH = 12;
 

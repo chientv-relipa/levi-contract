@@ -1,174 +1,158 @@
 # Levi — AI Agent Firewall on Sui (Move)
 
-Levi is an on-chain firewall for AI agents on Sui. It intercepts the actions an agent
-wants to broadcast, stores the encrypted intent on-chain, has an independent LLM relayer
-analyze it off-chain, and only lets the action execute once a verdict allows it.
+Levi is an **on-chain firewall for AI agents** on Sui. When an AI agent wants to broadcast
+a transaction, it first submits the **encrypted intent** to Levi. An independent off-chain
+relayer (running an LLM) decrypts and analyzes it, then writes a verdict back on-chain. The
+agent only broadcasts the real transaction if the verdict is **Approved** — otherwise the
+action is **Blocked**, or **Escalated** to the human owner for manual approval.
 
-This is the Sui/Move port of the Solana reference implementation in the sibling
-`../contract/` package. Levi keeps the business architecture (gatekeeper, second-LLM
-analysis, reputation/strikes, escalation, payload encryption) but **drops the
-Solana-specific infrastructure** — MagicBlock Ephemeral Rollup, delegation/commit, vault
-sponsor, chunked writes — because Sui is natively fast and supports sponsored transactions.
+Levi is a **gatekeeper, not an executor**: it never holds private keys, never signs, and
+never moves funds. It only stores intents, enforces policy, and records an immutable,
+public reputation for each agent.
 
-The Move **package name is `contract`** (mirrors the Solana side) while the on-chain
-**module namespace is `levi`** (the product name on Sui).
+## How it works
+
+```
+Agent builds tx (unsigned) ──encrypt──▶ submit_action ──▶ Action(Pending) on-chain ─emit─▶ ActionSubmitted
+                                                                                              │
+                              off-chain relayer: decrypt → LLM analysis → raw_score ◀─────────┘
+                                                                                              │
+            verdict_action(raw_score) ──▶ Approved / Escalated / Blocked  +  update reputation
+                                                                                              │
+   Approved ─▶ agent signs & broadcasts the real tx        Escalated ─▶ owner approve / reject
+```
+
+- **On-chain** = storage + authority enforcement + deterministic policy (thresholds) +
+  immutable verdict/reputation record. No AI, no tx execution.
+- **Off-chain relayer** = decrypt + LLM threat analysis → produces `raw_score`. (Separate
+  service; not in this package.)
 
 ## Layout
 
-The package is split into many small, single-responsibility modules, organised in
-folders that mirror the Solana reference (`common/`, `states/`, `handlers/`). Note a
-Move language rule: **one module = one file**, and **constants (incl. error codes) are
-module-private** — they cannot be shared from a single `errors` module, so each
-`#[error]` lives in the module that raises it.
+One module = one file. Constants and error codes are module-private (each `#[error]` lives
+in the module that raises it). Handlers are **one module per instruction**.
 
 ```
 sui-contract/
-├── Move.toml                      # package `contract`, edition 2024, address `levi`
+├── Move.toml                       # package `contract`, edition 2024, address `levi`
 ├── sources/
 │   ├── common/
-│   │   ├── constants.move         # MAX_PAYLOAD, MAX_ALLOWED_TARGETS (public accessors)
-│   │   └── events.move            # shared event schema + emit_* helpers
-│   ├── states/                    # data objects + their package-internal operations
-│   │   ├── capability.move        # AdminCap, RelayerCap (authority objects)
-│   │   ├── config.move            # Config singleton: fields, getters, create/update ops
-│   │   ├── registry.move          # AgentRegistry: Table<wallet, Agent ID>
-│   │   ├── agent.move             # Agent: identity, policy, whitelist, reputation
-│   │   └── action.move            # Action: status codes, guards, verdict mutators
-│   └── handlers/                  # entry functions — ONE MODULE PER INSTRUCTION
-│       ├── initialize.move                  # bootstrap: create Config + mint caps
-│       ├── update_config.move               # update_config (AdminCap)
-│       ├── update_maintenance.move          # update_maintenance (AdminCap)
-│       ├── register_agent.move              # register_agent (sender = owner)
-│       ├── activate_agent.move              # activate_agent (owner)
-│       ├── deactivate_agent.move            # deactivate_agent (owner)
-│       ├── update_agent_program_target.move # whitelist add/toggle (owner)
-│       ├── submit_action.move               # submit_action (sender = agent wallet)
-│       ├── verdict_action.move              # verdict_action (RelayerCap)
-│       ├── approve_action.move              # approve_action (owner)
-│       └── reject_action.move               # reject_action (owner)
-└── tests/                         # Move unit / scenario tests (32 tests)
+│   │   ├── constants.move          # MAX_PAYLOAD, MAX_ALLOWED_TARGETS (public accessors)
+│   │   └── events.move             # event schema + emit_* helpers
+│   ├── states/                     # data objects + package-internal ops + getters
+│   │   ├── capability.move         # AdminCap, RelayerCap, BootstrapCap
+│   │   ├── config.move             # Config singleton: policy, getters, create/update
+│   │   ├── registry.move           # AgentRegistry: Table<wallet, Agent ID>
+│   │   ├── agent.move              # Agent: identity, policy, whitelist, reputation
+│   │   └── action.move             # Action: status codes, guards, verdict mutators
+│   └── handlers/                   # entry functions — one module per instruction
+│       ├── initialize.move
+│       ├── update_config.move
+│       ├── update_maintenance.move
+│       ├── register_agent.move
+│       ├── activate_agent.move
+│       ├── deactivate_agent.move
+│       ├── update_agent_program_target.move
+│       ├── submit_action.move
+│       ├── verdict_action.move
+│       ├── approve_action.move
+│       └── reject_action.move
+├── tests/                          # Move unit / scenario tests (41 tests)
+├── sdk/                            # TypeScript SDK (PTB builders + crypto) — see sdk/README.md
+└── tests-ts/                       # crypto unit tests + testnet e2e tests
 ```
 
-### Module responsibilities
+## On-chain objects
 
-| Layer | Module | Mirrors Solana |
-|-------|--------|----------------|
-| common | `constants` | `common/constant.rs` |
-| common | `events` | `common/event.rs` |
-| states | `capability` | the `OPERATOR_PUBKEY` / `config.relayer` checks |
-| states | `config` | `states/config.rs` |
-| states | `registry` | the `[b"levi", b"agent", wallet]` PDA lookup |
-| states | `agent` | `states/agent.rs` |
-| states | `action` | `states/action.rs` |
-| handlers | `initialize` | `admin/initialize.rs` |
-| handlers | `update_config` | `admin/update_confg.rs` |
-| handlers | `update_maintenance` | `admin/update_maintenance.rs` |
-| handlers | `register_agent` | `register_agent.rs` |
-| handlers | `activate_agent` | `active_agent.rs` |
-| handlers | `deactivate_agent` | `deactivate_agent.rs` |
-| handlers | `update_agent_program_target` | `update_agent_program_target.rs` |
-| handlers | `submit_action` | `init_action.rs` + `append_payload.rs` + `finalize_action_building.rs` (collapsed) |
-| handlers | `verdict_action` | `admin/verdict_action.rs` |
-| handlers | `approve_action` | `approve_action.rs` |
-| handlers | `reject_action` | `reject_action.rs` |
+| Object | Kind | Holds |
+|--------|------|-------|
+| `Config` | Shared (singleton) | relayer addr, x25519 encryption key, thresholds, EMA params, maintenance flag |
+| `AgentRegistry` | Shared (singleton) | `Table<wallet → Agent ID>` lookup |
+| `Agent` | Shared (one per agent) | wallet, owner, spend_limit, allowed_targets[10], **reputation** (threat_score, strikes), counters, `action_index` |
+| `Action` | Shared (one per action) | encrypted payload, target, value, commitment, status, decision, raw_score, reasoning_hash |
+| `AdminCap` | Owned | admin authority |
+| `RelayerCap` | Owned | relayer (verdict) authority |
+| `BootstrapCap` | Owned (one-shot) | consumed by `initialize` |
 
-Each handler module is named after its instruction and exposes a single public entry
-function of the same name (`levi::submit_action::submit_action`, …), mirroring the
-one-file-per-instruction layout of the Solana `contexts/` folder.
+## Authority model (capabilities)
 
-## Architecture mapping (Solana → Sui)
+Authority is held by **bearer capability objects**, not hardcoded addresses:
 
-| Solana / Anchor | Sui / Move |
-|---|---|
-| PDA (seeds) | Shared object + `Table` registry |
-| `signer == PUBKEY` checks | Capability objects (`AdminCap`, `RelayerCap`) + sender checks |
-| Multi-signer instruction | One sender per tx; authority via caps + sponsored gas |
-| MagicBlock ER: delegate / commit / vault sponsor | **Removed** (Sui is fast; native sponsored tx) |
-| Zero-copy + chunked payload (init→delegate→append→finalize) | Single `submit_action` with `vector<u8>` |
-| `emit!(Event)` | `sui::event::emit` |
+- **AdminCap** → `update_config`, `update_maintenance`, `init_registry`.
+- **RelayerCap** → `verdict_action`.
+- **owner** (sender == `agent.owner`) → register, activate/deactivate, update target, approve/reject.
+- **agent wallet** (sender == `agent.agent_wallet`) → `submit_action`.
 
-### Authority model — IMPORTANT (differs from Solana)
+Rotate authority by **transferring the cap object** (no redeploy). The `config.operator` /
+`config.relayer` address fields are informational only — they are never read in an
+authorization check.
 
-In Solana, the `config.operator` / `config.relayer` **address fields ARE the authority**
-(every handler checks `signer == config.operator` / `== config.relayer`). In this Sui
-port, authority is held by **bearer capability objects**:
+### One-time bootstrap (OTW)
 
-- **Admin** authority = whoever holds the `AdminCap` (gates `update_config`,
-  `update_maintenance`).
-- **Relayer** authority = whoever holds the `RelayerCap` (gates `verdict_action`).
+`initialize` is gated by a **one-time witness**: at publish, module `init` mints a single
+`BootstrapCap` to the deployer; `initialize` consumes it. So the firewall can be initialized
+**only by the deployer, exactly once** (enforced by the type system — the cap is destroyed).
 
-Consequently the `config.operator` and `config.relayer` fields are **informational only**
-— they are stored for off-chain discovery/display and are **never read in any on-chain
-authorization check**. This means:
+## Behaviour
 
-- **Rotating the relayer** = transfer the `RelayerCap` object to the new relayer. Calling
-  `update_config(relayer: …)` changes only the displayed address, **not** who can land
-  verdicts. Do both together to keep the field truthful.
-- **Rotating the admin** = transfer the `AdminCap` object. There is no `operator` field in
-  `update_config` at all.
-
-## Behaviour notes (parity with the Solana reference)
-
-- **Decision mapping** (`decision_for`): `raw < escalate → Approved`,
-  `escalate ≤ raw < block → Escalated`, `raw ≥ block → Blocked`.
-- **Strike on verdict**: added only when `raw_score ≥ block_threshold` (i.e. Blocked).
-- **Strike on reject**: `reject_action` adds a strike and may auto-deactivate the agent —
-  matching the Solana `reject_action` (this is fixed here vs. an earlier port that did not
-  strike on reject).
+- **Decision mapping**: `raw < escalate → Approved`, `escalate ≤ raw < block → Escalated`,
+  `raw ≥ block → Blocked`.
 - **EMA reputation**: `next = (alpha*raw + (scale-alpha)*prev) / scale`.
-- **Auto-deactivate** when `strikes ≥ max_strikes`.
-- **`decision` field is frozen at verdict** (Approved/Escalated/Blocked) and is *not*
-  overwritten by `approve`/`reject` — same as Solana, where escalation resolution changes
-  only `status`. The `EscalationResolved` event reports the final `status`.
-- **Maintenance gating** applies to all mutating handlers (`register`, `submit`, `verdict`,
-  and the agent lifecycle), matching Solana. Escalation resolution (`approve`/`reject`) is
-  intentionally ungated, also matching Solana.
-
-### Intentional divergences from Solana (improvements)
-
-These are stricter/safer than the Solana reference; kept on purpose:
-
-- `submit_action` rejects an **inactive** agent (`EAgentInactive`); Solana does not gate this.
-- `submit_action` increments `total_actions` / `action_counter`; in Solana these counters
-  are never written (effectively dead fields).
-- `initialize` / `update_config` validate `escalate_threshold ≤ block_threshold`
-  (`EInvalidThresholds`); Solana does not validate.
-- `initialize` / `update_config` validate the EMA params (`ema_scale > 0` and
-  `ema_alpha ≤ ema_scale`, `EInvalidEmaParams`). Without this a misconfigured Config would
-  underflow `scale - alpha` or divide by zero in `apply_threat_score`, aborting **every**
-  verdict. Solana shares the latent bug but does not guard against it.
-- `submit_action` enforces **per-agent `action_id` uniqueness** via an `action_index`
-  (`Table<u64, ID>`) on the `Agent` (`EDuplicateActionId`). On Solana the
-  `[.., "action", agent, action_id]` PDA seed made duplicates impossible for free; Sui has
-  no PDA derivation, so the table both restores that guarantee and provides an
-  `action_id → Action object ID` lookup (`agent::action_object_id`).
+- **Strike**: added when `raw_score ≥ block_threshold` (a Blocked verdict) and when the owner
+  rejects an escalated action. Strikes only go up.
+- **Auto-deactivate**: when `strikes ≥ max_strikes` the agent is automatically deactivated
+  (checked on every verdict).
+- **`decision`** is frozen at verdict; `approve`/`reject` change only `status`. The
+  `EscalationResolved` event reports the final status.
+- **Maintenance gate**: `register`, `submit`, `verdict`, and the agent-lifecycle handlers
+  reject while `maintenance = true`. Escalation resolution (`approve`/`reject`) is ungated.
+- **Validation**: `initialize` / `update_config` enforce `escalate ≤ block`,
+  `ema_scale > 0 && ema_alpha ≤ ema_scale`, and a 32-byte `relayer_encryption_key`.
+- **Uniqueness**: per-agent `action_id` uniqueness via the `action_index` table (also serves
+  as an `action_id → Action object ID` lookup).
 
 ## Lifecycle
 
-1. `initialize::initialize` — operator deploys Config, gets `AdminCap`; relayer gets `RelayerCap`.
+1. `initialize` — deployer creates Config + mints `AdminCap` (to deployer) and `RelayerCap`
+   (to the relayer address); consumes the `BootstrapCap`.
 2. `registry::init_registry` — operator creates the agent registry (one-time bootstrap).
-3. `agent_manager::register_agent` — owner registers an agent (records `agent_wallet`, spend limit).
-4. `action_flow::submit_action` — agent wallet submits an encrypted action (status `Pending`).
-5. `action_flow::verdict_action` — relayer writes `raw_score` + `reasoning_hash`; the program
-   decides Approved / Escalated / Blocked, updates EMA + strikes.
-6. `action_flow::approve_action` / `reject_action` — owner resolves an `Escalated` action.
+3. `register_agent` — owner registers an agent (records `agent_wallet`, spend limit).
+4. `submit_action` — agent wallet submits an encrypted action (status `Pending`).
+5. `verdict_action` — relayer writes `raw_score` + `reasoning_hash`; the program decides
+   Approved / Escalated / Blocked and updates EMA reputation + strikes.
+6. `approve_action` / `reject_action` — owner resolves an `Escalated` action.
 
-## Prerequisites
+## Encryption
 
-- **Sui CLI** — verified with `sui 1.73.1`.
-- **Node.js** ≥ 20 (for a future SDK / scripts).
+The agent SDK encrypts the payload (user prompt + serialized intended transaction) to the
+relayer's **x25519 public key** (stored in Config) using **ECDH + ChaCha20-Poly1305**, and
+computes a **blake3 commitment** of the plaintext (stored on-chain). Only the relayer can
+decrypt; it recomputes the commitment to detect tampering. See `sdk/README.md`.
 
 ## Build & test
 
 ```bash
 cd sui-contract
 sui move build
-sui move test
+sui move test          # Move unit tests (offline)
+
+# TypeScript SDK / tests
+npm install
+npm test               # crypto unit tests (offline)
+npm run test:e2e       # end-to-end against testnet (needs .env, see sdk/README.md)
 ```
 
-## Publish (testnet)
+## Deploy (testnet)
 
 ```bash
-cd sui-contract
 sui client publish --gas-budget 200000000
 ```
+
+After publishing, run `initialize` (with the `BootstrapCap` from the publish tx) and
+`registry::init_registry`. The current testnet deployment IDs are recorded in
+[`DEPLOYMENT.testnet.md`](./DEPLOYMENT.testnet.md).
+
+## Prerequisites
+
+- **Sui CLI** (verified with `sui 1.73.1`)
+- **Node.js** ≥ 20 (for the SDK + tests)

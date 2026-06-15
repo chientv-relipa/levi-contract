@@ -1,5 +1,4 @@
 /// `Agent` state — identity, policy, inline allowed-target whitelist and reputation.
-/// Mirrors Solana `states/agent.rs`.
 ///
 /// The `Agent` is a shared object so its reputation is publicly readable (it IS the
 /// public reputation record). This module owns the struct and exposes `public(package)`
@@ -34,9 +33,8 @@ public struct Agent has key {
     total_approved: u64,
     total_blocked: u64,
     total_escalated: u64,
-    // Submitted action_id -> Action object ID. Enforces per-agent action_id
-    // uniqueness (the Solana PDA seed `[..,"action", agent, action_id]` guaranteed
-    // this) and doubles as a lookup, since Sui has no PDA derivation.
+    // Submitted action_id -> Action object ID. Enforces per-agent action_id uniqueness
+    // (table::add aborts on a duplicate key) and doubles as an action_id -> Action lookup.
     action_index: Table<u64, ID>,
 }
 
@@ -104,7 +102,7 @@ public(package) fun set_active(agent: &mut Agent, active: bool) {
     agent.active = active;
 }
 
-/// EMA update: `next = (alpha*raw + (scale-alpha)*prev) / scale` (matches Solana).
+/// EMA update: `next = (alpha*raw + (scale-alpha)*prev) / scale`.
 public(package) fun apply_threat_score(
     agent: &mut Agent,
     raw_score: u32,

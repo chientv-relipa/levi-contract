@@ -1,6 +1,5 @@
 /// Handler: toggle the maintenance flag, gated on the `AdminCap`.
-/// Mirrors Solana `admin/update_maintenance.rs`. While `true`, every mutating handler
-/// rejects with `EInMaintenance`.
+/// While `true`, every mutating handler rejects with `EInMaintenance`.
 module levi::update_maintenance;
 
 use levi::capability::AdminCap;

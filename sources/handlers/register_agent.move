@@ -1,4 +1,4 @@
-/// Handler: register a new agent (sender = owner). Mirrors Solana `register_agent.rs`.
+/// Handler: register a new agent (sender = owner).
 /// Records `agent_wallet`, marks the agent active, inserts it into the registry and
 /// bumps the global agent count.
 module levi::register_agent;

@@ -1,6 +1,5 @@
-/// `Action` state — the encrypted intent plus verdict fields. Mirrors Solana
-/// `states/action.rs` (minus the zero-copy / chunking machinery, which Sui doesn't
-/// need: the whole payload fits one transaction).
+/// `Action` state — the encrypted intent plus verdict fields. The whole payload fits one
+/// transaction, so it is stored in a single `vector<u8>` (no chunking needed).
 ///
 /// This module owns the struct, the `ActionStatus` u8 codes, the state guards
 /// (`assert_*`) and the package mutators. The flow handlers live in the per-instruction
@@ -8,8 +7,8 @@
 /// `levi::reject_action`.
 module levi::action;
 
-// ActionStatus values (mirror Solana). `Initialization (0)` is omitted because submit
-// is single-shot; `decision` uses `PENDING` as the "undecided" sentinel.
+// ActionStatus values. `Initialization (0)` is omitted because submit is single-shot;
+// `decision` uses `PENDING` as the "undecided" sentinel.
 const STATUS_PENDING: u8 = 1;
 const STATUS_APPROVED: u8 = 2;
 const STATUS_ESCALATED: u8 = 3;
@@ -84,8 +83,8 @@ public(package) fun record_verdict(
 }
 
 /// Move the action's lifecycle `status` to `new_status`. The `decision` field is left
-/// frozen at the value chosen at verdict — mirrors Solana, where escalation resolution
-/// (`approve` / `reject`) changes only `status`, not the recorded verdict `decision`.
+/// frozen at the value chosen at verdict — escalation resolution (`approve` / `reject`)
+/// changes only `status`, not the recorded verdict `decision`.
 public(package) fun set_status(action: &mut Action, new_status: u8) {
     action.status = new_status;
 }

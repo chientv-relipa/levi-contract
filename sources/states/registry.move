@@ -1,8 +1,7 @@
 /// Agent registry — maps an agent wallet address to its `Agent` object ID.
 ///
-/// Sui has no PDA derivation, so this shared `Table` replaces the Solana
-/// `[b"levi", b"agent", wallet]` seed lookup: clients and the relayer resolve an
-/// `Agent` object from a wallet address through this registry.
+/// A shared `Table` lookup: clients and the relayer resolve an `Agent` object from a
+/// wallet address through this registry.
 module levi::registry;
 
 use sui::table::{Self, Table};

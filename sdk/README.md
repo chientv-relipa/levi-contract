@@ -1,17 +1,16 @@
 # Levi Sui SDK
 
 TypeScript SDK for the Levi Move contract — PTB builders + relayer-compatible
-encryption. Port of the Solana **Bento** SDK (`../../contract/sdk/`), adapted for Sui:
-object IDs instead of PDAs, `@mysten/sui` PTBs instead of Anchor, capability objects
-instead of authority pubkeys. The `crypto/` layer is reused verbatim so one relayer can
-serve both chains.
+encryption. It builds `@mysten/sui` Programmable Transaction Blocks (PTBs) for every
+instruction, resolves the deployed object IDs, and ships the x25519 + ChaCha20-Poly1305 +
+blake3 crypto used to encrypt action payloads to the relayer.
 
-## Layout (mirrors Bento)
+## Layout
 
 ```
 sdk/
 ├── common/constants.ts   # MAX_PAYLOAD, status enums, module names, deployed object IDs
-├── crypto/               # x25519 + ChaCha20-Poly1305 + blake3 (chain-agnostic)
+├── crypto/               # x25519 + ChaCha20-Poly1305 + blake3 (encrypt to relayer)
 │   ├── keypair / encrypt / decrypt / commitment / action-payload
 ├── instructions/         # one builder per instruction → adds a moveCall to a Transaction
 ├── types/                # parsed Config / Agent / Action shapes

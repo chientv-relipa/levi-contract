@@ -5,8 +5,8 @@ import { bcs } from "@mysten/sui/bcs";
 //   - tx: the serialized Sui transaction the agent intends to run (unsigned PTB,
 //         BCS TransactionData bytes). The relayer decodes + analyzes the moveCalls.
 //
-// Encoded with BCS (Sui-native) instead of borsh (Bento/Solana), but the role is
-// identical: it is the decrypted analysis payload, never read on-chain.
+// Encoded with BCS (Sui-native). This is the decrypted analysis payload, never read
+// on-chain.
 
 export interface ActionPayload {
   prompt: string;

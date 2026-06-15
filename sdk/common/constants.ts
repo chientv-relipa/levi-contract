@@ -1,5 +1,4 @@
-// Mirrors Solana Bento `sdk/common/constant.ts`, adapted for Sui (object IDs instead
-// of PDA seeds, capability objects instead of authority pubkeys).
+// Shared SDK constants: payload limits, status enums, module names, deployed object IDs.
 
 export const MAX_PAYLOAD = 8192;
 export const MAX_ALLOWED_TARGETS = 10;

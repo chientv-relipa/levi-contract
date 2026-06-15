@@ -1,6 +1,5 @@
 /// Handler: owner approves an escalated action (`Escalated → Approved`). No strike.
-/// Mirrors Solana `approve_action.rs`. Intentionally ungated for maintenance (matches
-/// Solana, which does not gate escalation resolution).
+/// Intentionally ungated for maintenance (escalation resolution is not maintenance-gated).
 module levi::approve_action;
 
 use levi::agent::{Self, Agent};

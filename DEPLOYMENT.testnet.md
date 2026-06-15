@@ -40,7 +40,7 @@ enforcement). The v1 package (`0x4c9ebb…`) is abandoned/orphaned.
 
 - Package: https://suiscan.xyz/testnet/object/0x5a9e02eabf663e8495a4144e487a71a744c72e378bd9637412c3d45ce69241fb
 
-## Authority model (differs from Solana)
+## Authority model
 
 `initialize` is one-time-witness gated: at publish, module `init` mints a single
 `BootstrapCap` to the deployer; `initialize` consumes it. So bootstrap is deployer-only +

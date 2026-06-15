@@ -1,8 +1,7 @@
 /// On-chain events emitted across the Levi firewall lifecycle.
 ///
 /// Event structs are defined once here and emitted via package-internal `emit_*`
-/// helpers so every module shares a single, consistent event schema. Mirrors the
-/// granular event set of the Solana reference (`common/event.rs`).
+/// helpers so every module shares a single, consistent event schema.
 module levi::events;
 
 use sui::event;

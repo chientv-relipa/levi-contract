@@ -4,16 +4,11 @@ edition = "2024"
 
 # Levi — AI agent firewall on Sui (Move).
 #
-# This is the Sui/Move port of the Solana reference implementation in the sibling
-# `../contract/` package. It keeps the business architecture (gatekeeper, second-LLM
-# analysis, reputation/strikes, escalation, payload encryption) but drops the
-# Solana-specific infrastructure (MagicBlock Ephemeral Rollup, delegation/commit,
-# vault sponsor, chunked writes) because Sui is natively fast and supports sponsored
-# transactions.
-#
-# The package is named `contract` to mirror the Solana side; the on-chain module
-# namespace is `levi` (the product name on Sui). The Sui framework is an implicit
-# system dependency, so it is not declared here.
+# An on-chain gatekeeper for AI agents: it stores encrypted action intents, lets an
+# off-chain LLM relayer write a verdict, tracks per-agent reputation (EMA + strikes),
+# and supports owner escalation. The package is named `contract`; the on-chain module
+# namespace is `levi`. The Sui framework is an implicit system dependency, so it is not
+# declared here.
 
 [dependencies]
 

@@ -1,5 +1,4 @@
-/// Authority capabilities (replaces Solana's `operator.key() == OPERATOR_PUBKEY` and
-/// `relayer.key() == config.relayer` pubkey checks).
+/// Authority capabilities — bearer objects that grant authority.
 ///
 /// Whoever holds the cap object has the authority. Rotating an authority is just
 /// transferring / re-minting the cap. The caps are minted once during `initialize`.

@@ -1,11 +1,8 @@
 /// Bootstrap entrypoint — creates the shared `Config` and mints the authority caps.
-/// Mirrors Solana `admin/initialize.rs` (operator-only, once).
-///
-/// On Solana those guarantees come from a hardcoded `OPERATOR_PUBKEY` + a singleton
-/// PDA. On Sui we use the idiomatic equivalent: a **one-time witness** drives the module
-/// `init` (runs exactly once, at publish, for the publisher only), which mints a single
-/// `BootstrapCap` to the deployer. `initialize` then **consumes** that cap, so it can be
-/// called only by the deployer and only once.
+/// Operator-only and exactly-once, via a **one-time witness**: the module `init` (runs
+/// once at publish, for the publisher only) mints a single `BootstrapCap` to the deployer,
+/// and `initialize` **consumes** that cap — so it can be called only by the deployer and
+/// only once.
 module levi::initialize;
 
 use levi::config;

@@ -1,5 +1,5 @@
 /// `Config` state — the shared singleton holding relayer identity, encryption key,
-/// policy thresholds and EMA parameters. Mirrors Solana `states/config.rs`.
+/// policy thresholds and EMA parameters.
 ///
 /// This module owns the `Config` struct and therefore all field access. Handlers in
 /// other modules (`initialize`, `update_config`, `update_maintenance`) drive it through
@@ -34,7 +34,7 @@ const EInvalidEmaParams: vector<u8> = b"ema_scale must be > 0 and ema_alpha <= e
 #[error]
 const EInvalidEncryptionKey: vector<u8> = b"relayer_encryption_key must be 32 bytes (x25519)";
 
-/// x25519 public key length — mirrors Solana's fixed `[u8; 32]` type guarantee.
+/// x25519 public key length (32 bytes).
 const ENCRYPTION_KEY_LEN: u64 = 32;
 
 // ----- Package operations (driven by handlers) -----

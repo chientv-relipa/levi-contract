@@ -1,4 +1,4 @@
-/// Handler: deactivate an agent (owner only). Mirrors Solana `deactivate_agent.rs`.
+/// Handler: deactivate an agent (owner only).
 /// Maintenance-gated.
 module levi::deactivate_agent;
 
