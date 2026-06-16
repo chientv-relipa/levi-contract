@@ -175,7 +175,7 @@ fun lifecycle_rejected_in_maintenance() {
     ts::return_shared(cfg);
     sc.return_to_sender(admin);
 
-    // Owner tries to deactivate during maintenance → abort (Solana parity).
+    // Owner tries to deactivate during maintenance → abort (lifecycle handlers are gated).
     sc.next_tx(OWNER);
     let cfg = sc.take_shared<Config>();
     let mut agent = sc.take_shared<Agent>();

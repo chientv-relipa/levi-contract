@@ -20,7 +20,7 @@ import {
 // End-to-end tests against the live testnet deployment. Requires OPERATOR_SECRET_KEY
 // in .env (the operator wallet holding AdminCap + RelayerCap, with some testnet SUI).
 //
-// Flow mirrors the Solana Bento suite: register agent -> submit -> verdict
+// Full action lifecycle: register agent -> submit -> verdict
 // (approve / escalate) -> owner approve / reject.
 
 const RPC = process.env.SUI_RPC_URL ?? getFullnodeUrl("testnet");

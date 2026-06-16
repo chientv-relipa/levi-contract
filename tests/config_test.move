@@ -154,7 +154,7 @@ fun initialize_rejects_zero_scale() {
 #[expected_failure(abort_code = levi::config::EInvalidEncryptionKey)]
 fun initialize_rejects_bad_key_length() {
     let mut sc = ts::begin(OPERATOR);
-    // A non-32-byte encryption key must abort (mirrors Solana's [u8; 32] type guarantee).
+    // A non-32-byte encryption key must abort (the relayer key is a fixed 32-byte x25519 key).
     let cap = initialize::new_bootstrap_for_testing(sc.ctx());
     initialize::initialize(cap, RELAYER, b"too-short", 40_000, 70_000, 5, 300, 1_000, sc.ctx());
     ts::end(sc);

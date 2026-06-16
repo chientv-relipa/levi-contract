@@ -163,7 +163,7 @@ fun escalated_then_owner_rejects_and_strikes() {
         assert!(action::status(&act) == action::status_rejected(), 1);
         // `decision` stays frozen at the verdict value (Escalated); status is the final state
         assert!(action::decision(&act) == action::status_escalated(), 2);
-        // Solana parity: rejecting an escalated action earns a strike.
+        // Rejecting an escalated action earns the agent a strike.
         assert!(agent::strikes(&agent) == 1, 3);
         assert!(agent::is_active(&agent), 4); // 1 strike < max
         ts::return_shared(cfg);
