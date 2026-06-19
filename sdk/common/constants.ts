@@ -46,7 +46,7 @@ export const TESTNET_ADDRESSES = {
   configId:
     "0x6f329ff56cd8dad2611a26919872672478ddc6de65fca3a18ed1b3a13e9d995c",
   registryId:
-    "0xbece5badd7e63ef061440268cd0050b04deeb6265253eeec07fe229745557c10",
+    "0xd501e527ac538e43f6650c652842ef23ddd970a8c9cd48089b5285b8b9a80d53",
   adminCapId:
     "0xd845f5a94c2dc5c605918be3035ca614f7442c0dbf1459b7229c99fe5b87bb59",
   relayerCapId:
